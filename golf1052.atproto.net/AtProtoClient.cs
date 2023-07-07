@@ -9,36 +9,54 @@ using golf1052.atproto.net.Models.AtProto.Repo;
 using golf1052.atproto.net.Models.AtProto.Server;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 
 namespace golf1052.atproto.net
 {
     public class AtProtoClient
     {
-        private Uri baseUri;
-        private HttpClient httpClient;
+        private readonly Uri baseUri;
+        private readonly HttpClient httpClient;
+        private readonly JsonSerializerSettings serializer;
         private string? accessJwt;
+
+        public string? Did { get; private set; }
 
         public AtProtoClient() : this(new Uri(Constants.BlueskyBaseUrl), new HttpClient())
         {
         }
 
+        public AtProtoClient(HttpClient httpClient) : this(new Uri(Constants.BlueskyBaseUrl), httpClient)
+        {
+        }
+
         public AtProtoClient(Uri baseUri, HttpClient httpClient)
         {
-            if (baseUri.AbsolutePath != "/xrpc")
+            if (!baseUri.AbsolutePath.Contains("xrpc"))
             {
                 throw new Exception("Library currently only supports HTTP API (XRPC)");
             }
 
             this.baseUri = baseUri;
             this.httpClient = httpClient;
+            serializer = new JsonSerializerSettings()
+            {
+                ContractResolver = new DefaultContractResolver()
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy()
+                },
+                NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
+                MetadataPropertyHandling = MetadataPropertyHandling.Ignore
+            };
         }
 
         public async Task<CreateSessionResponse> CreateSession(CreateSessionRequest request)
         {
             Func<HttpRequestMessage> getRequest = () =>
             {
+                string c = JsonConvert.SerializeObject(request, serializer);
                 Url url = new Url(baseUri).AppendPathSegment("com.atproto.server.createSession");
-                StringContent content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                StringContent content = new StringContent(JsonConvert.SerializeObject(request, serializer), Encoding.UTF8, "application/json");
                 HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = content
@@ -48,6 +66,7 @@ namespace golf1052.atproto.net
 
             HttpResponseMessage responseMessage = await SendRequest(getRequest);
             CreateSessionResponse response = await Deserialize<CreateSessionResponse>(responseMessage);
+            Did = response.Did;
             accessJwt = response.AccessJwt;
             return response;
         }
@@ -57,7 +76,7 @@ namespace golf1052.atproto.net
             Func<HttpRequestMessage> getRequest = () =>
             {
                 Url url = new Url(baseUri).AppendPathSegment("com.atproto.repo.createRecord");
-                StringContent content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                StringContent content = new StringContent(JsonConvert.SerializeObject(request, serializer), Encoding.UTF8, "application/json");
                 HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = content
@@ -74,7 +93,7 @@ namespace golf1052.atproto.net
             Func<HttpRequestMessage> getRequest = () =>
             {
                 Url url = new Url(baseUri).AppendPathSegment("com.atproto.repo.deleteRecord");
-                StringContent content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                StringContent content = new StringContent(JsonConvert.SerializeObject(request, serializer), Encoding.UTF8, "application/json");
                 HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = content
@@ -82,6 +101,7 @@ namespace golf1052.atproto.net
                 return requestMessage;
             };
 
+            // API just returns 200 OK with no body on success
             HttpResponseMessage responseMessage = await SendAuthorizedRequest(getRequest);
         }   
 
@@ -163,7 +183,7 @@ namespace golf1052.atproto.net
         private async Task<T> Deserialize<T>(HttpResponseMessage responseMessage)
         {
             string responseString = await responseMessage.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(responseString)!;
+            return JsonConvert.DeserializeObject<T>(responseString, serializer)!;
         }
     }
 }
