@@ -3,6 +3,18 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <Title>golf1052.atproto.net</Title>
+    <Authors>golf1052</Authors>
+    <Version>0.1.0</Version>
+    <Description>An C# AT Protocol/Bluesky library</Description>
+    <PackageProjectUrl>https://github.com/golf1052/atproto.net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/golf1052/atproto.net</RepositoryUrl>
+    <PackageTags>bluesky at-proto</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
