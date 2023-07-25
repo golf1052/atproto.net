@@ -71,7 +71,7 @@ namespace golf1052.atproto.net
             return response;
         }
 
-        public async Task<CreateRecordResponse> CreateRecord<T>(CreateRecordRequest<T> request)
+        public virtual async Task<CreateRecordResponse> CreateRecord<T>(CreateRecordRequest<T> request)
         {
             Func<HttpRequestMessage> getRequest = () =>
             {
@@ -105,7 +105,7 @@ namespace golf1052.atproto.net
             HttpResponseMessage responseMessage = await SendAuthorizedRequest(getRequest);
         }   
 
-        public async Task<UploadBlobResponse> UploadBlob(UploadBlobRequest request)
+        public virtual async Task<UploadBlobResponse> UploadBlob(UploadBlobRequest request)
         {
             MemoryStream? newStream = null;
             Func<HttpRequestMessage> getRequest = () =>
