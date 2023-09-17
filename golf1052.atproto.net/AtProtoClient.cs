@@ -18,19 +18,19 @@ namespace golf1052.atproto.net
         private readonly Uri baseUri;
         private readonly HttpClient httpClient;
         private readonly JsonSerializerSettings serializer;
-        private string? accessJwt;
 
         public string? Did { get; private set; }
+        public string? AccessJwt { get; private set; }
 
-        public AtProtoClient() : this(new Uri(Constants.BlueskyBaseUrl), new HttpClient())
+        public AtProtoClient(string? did = null, string? accessJwt = null) : this(new Uri(Constants.BlueskyBaseUrl), new HttpClient(), did, accessJwt)
         {
         }
 
-        public AtProtoClient(HttpClient httpClient) : this(new Uri(Constants.BlueskyBaseUrl), httpClient)
+        public AtProtoClient(HttpClient httpClient, string? did = null, string? accessJwt = null) : this(new Uri(Constants.BlueskyBaseUrl), httpClient, did, accessJwt)
         {
         }
 
-        public AtProtoClient(Uri baseUri, HttpClient httpClient)
+        public AtProtoClient(Uri baseUri, HttpClient httpClient, string? did = null, string? accessJwt = null)
         {
             if (!baseUri.AbsolutePath.Contains("xrpc"))
             {
@@ -48,6 +48,16 @@ namespace golf1052.atproto.net
                 NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
                 MetadataPropertyHandling = MetadataPropertyHandling.Ignore
             };
+
+            if (!string.IsNullOrWhiteSpace(did))
+            {
+                Did = did;
+            }
+
+            if (!string.IsNullOrWhiteSpace(accessJwt))
+            {
+                AccessJwt = accessJwt;
+            }
         }
 
         public async Task<CreateSessionResponse> CreateSession(CreateSessionRequest request)
@@ -67,7 +77,7 @@ namespace golf1052.atproto.net
             HttpResponseMessage responseMessage = await SendRequest(getRequest);
             CreateSessionResponse response = await Deserialize<CreateSessionResponse>(responseMessage);
             Did = response.Did;
-            accessJwt = response.AccessJwt;
+            AccessJwt = response.AccessJwt;
             return response;
         }
 
@@ -134,7 +144,7 @@ namespace golf1052.atproto.net
 
         private async Task<HttpResponseMessage> SendAuthorizedRequest(Func<HttpRequestMessage> getHttpRequestMessage)
         {
-            if (string.IsNullOrEmpty(accessJwt))
+            if (string.IsNullOrEmpty(AccessJwt))
             {
                 throw new AtProtoException("Access JWT is not set. Unable to send authorized request.");
             }
@@ -142,7 +152,7 @@ namespace golf1052.atproto.net
             Func<HttpRequestMessage> getRequest = () =>
             {
                 HttpRequestMessage request = getHttpRequestMessage();
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessJwt);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AccessJwt);
                 return request;
             };
 
