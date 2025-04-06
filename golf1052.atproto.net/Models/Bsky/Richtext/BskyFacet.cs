@@ -9,7 +9,7 @@ namespace golf1052.atproto.net.Models.Bsky.Richtext
         public required List<BskyFeature> Features { get; init; }
     }
 
-    public interface BskyFeature
+    public record BskyFeature
     {
     }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using Flurl;
 using golf1052.atproto.net.Models.AtProto.Repo;
 using golf1052.atproto.net.Models.AtProto.Server;
+using golf1052.atproto.net.Models.Bsky.Feed;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -140,6 +142,23 @@ namespace golf1052.atproto.net
                 newStream.Dispose();
             }
             return await Deserialize<UploadBlobResponse>(responseMessage);
+        }
+
+        public virtual async Task<GetFeedPostsResponse> GetFeedPosts(List<string> uris)
+        {
+            Func<HttpRequestMessage> getRequest = () =>
+            {
+                Url url = new Url(baseUri).AppendPathSegment("app.bsky.feed.getPosts");
+                foreach (var uri in uris)
+                {
+                    url.AppendQueryParam("uris", uri);
+                }
+                HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
+                return requestMessage;
+            };
+
+            HttpResponseMessage responseMessage = await SendAuthorizedRequest(getRequest);
+            return await Deserialize<GetFeedPostsResponse>(responseMessage);
         }
 
         private async Task<HttpResponseMessage> SendAuthorizedRequest(Func<HttpRequestMessage> getHttpRequestMessage)
